@@ -1,0 +1,11 @@
+__pycache__/
+.venv/
+results/
+outputs/
+
+# 课程数据和本地实验报告
+train_data.csv
+test_data_unlabeled.csv
+predictions.csv
+*.docx
+*.pdf
