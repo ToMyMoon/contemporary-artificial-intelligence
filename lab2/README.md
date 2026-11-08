@@ -4,7 +4,9 @@
 
 ## 运行
 
-从仓库根目录进入 `lab2`。使用 Python 3.12 或以上版本，绘图依赖 Pillow。以下命令以 Windows PowerShell 为例，直接调用虚拟环境中的 Python，无需激活环境。
+使用 Python 3.12 或以上版本，绘图依赖 `Pillow>=10.1,<14`。已在 Windows 上使用 Python 3.14.5 和 Pillow 12.2.0 完整运行四道题并生成五张图。
+
+以下命令从仓库根目录开始，在 Windows PowerShell 中直接调用虚拟环境的 Python，无需激活环境。
 
 ```powershell
 cd lab2
@@ -24,7 +26,11 @@ python3 -m venv .venv
 
 `main.py` 自动创建 `results/`，重复运行会更新同名文件。五张图位于 `results/figures/`，CSV 和 JSON 位于 `results/`。没有中文字体时，图中使用英文标注。
 
-单独检查原题时，可在同一环境运行 `python main.py --task 1`（将 1 换为 2、3 或 4）。题四可加 `--depth 2` 或 `--depth 4`，输出 `best_target` 和 `best_value`。此处的 `python` 指上方创建的虚拟环境解释器。加 `--input 文件名.json` 可替换题目输入：题一、二使用 `start`、`goal`、`map`，题三接受要求文档中的 `tree_structure`，题四字段见 `cases.py` 的 `TREASURE`。
+单独检查原题时，可在同一环境运行 `python main.py --task 1`（将 1 换为 2、3 或 4）。题四可加 `--depth 2` 或 `--depth 4`，输出 `best_target` 和 `best_value`。此处的 `python` 指上方创建的虚拟环境解释器。加 `--input 文件名.json` 可替换题目输入，坐标均为从 0 开始的 `[行, 列]`。
+
+- 题一、二使用 `start`、`goal`、`map`。起点与终点之间无路时，题一返回空路径 `[]`，题二返回最小代价的无解标记 `-1`。
+- 题三接受实验要求文档中的 `tree_structure`。
+- 题四需要四个字段：`map` 是二维地形数组，`start_a` 和 `start_b` 是两名玩家的起点，`treasures` 是以宝藏编号为键的对象。每个宝藏包含位置 `position` 和价值 `value`，例如 `"T2": {"position": [2, 2], "value": 6}`。两个起点与所有宝藏必须互相可达。完整地图见 [cases.py](cases.py) 中的 `TREASURE`。
 
 ## 对照报告
 
