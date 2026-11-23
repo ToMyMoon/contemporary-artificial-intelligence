@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "reloaded_probabilities_and_predictions_identical": true,
+  "test_indices_and_labels_match_afc": true,
+  "independent_se_ce": 0.44086629230932534,
+  "independent_afc_ce": 0.4316985771153548,
+  "original_files_unchanged": 67,
+  "checkpoint_sha256": "7131a7bd6a448686967ebe00cd3c0525893e068cff48b3442003c68061686b71",
+  "test_count": 10000
+}

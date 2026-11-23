@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "test_count": 10000,
+  "matched_original_afc_indices_and_labels": true,
+  "reloaded_predictions_and_probabilities_exact": true,
+  "calibration_error_independently_recomputed": true
+}

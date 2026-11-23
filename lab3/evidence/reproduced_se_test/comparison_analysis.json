@@ -1,0 +1,166 @@
+{
+  "afc": {
+    "loss": 0.43169853515625,
+    "accuracy": 0.8776,
+    "count": 10000
+  },
+  "se_afc": {
+    "loss": 0.440866357421875,
+    "accuracy": 0.8658,
+    "count": 10000
+  },
+  "accuracy_delta_pp": -1.18,
+  "ce_delta": 0.009167822265625014,
+  "net_correct": -118,
+  "repaired": 507,
+  "introduced": 625,
+  "both_correct": 8151,
+  "both_wrong": 717,
+  "changed_predictions": 1374,
+  "per_class": [
+    {
+      "class_name": "airplane",
+      "count": 1000,
+      "afc_correct": 889,
+      "se_correct": 889,
+      "afc_accuracy": 0.889,
+      "se_accuracy": 0.889,
+      "delta_pp": 0.0,
+      "repaired": 53,
+      "introduced": 53
+    },
+    {
+      "class_name": "automobile",
+      "count": 1000,
+      "afc_correct": 936,
+      "se_correct": 905,
+      "afc_accuracy": 0.936,
+      "se_accuracy": 0.905,
+      "delta_pp": -3.1,
+      "repaired": 26,
+      "introduced": 57
+    },
+    {
+      "class_name": "bird",
+      "count": 1000,
+      "afc_correct": 793,
+      "se_correct": 826,
+      "afc_accuracy": 0.793,
+      "se_accuracy": 0.826,
+      "delta_pp": 3.3,
+      "repaired": 95,
+      "introduced": 62
+    },
+    {
+      "class_name": "cat",
+      "count": 1000,
+      "afc_correct": 802,
+      "se_correct": 699,
+      "afc_accuracy": 0.802,
+      "se_accuracy": 0.699,
+      "delta_pp": -10.3,
+      "repaired": 49,
+      "introduced": 152
+    },
+    {
+      "class_name": "deer",
+      "count": 1000,
+      "afc_correct": 905,
+      "se_correct": 883,
+      "afc_accuracy": 0.905,
+      "se_accuracy": 0.883,
+      "delta_pp": -2.2,
+      "repaired": 44,
+      "introduced": 66
+    },
+    {
+      "class_name": "dog",
+      "count": 1000,
+      "afc_correct": 804,
+      "se_correct": 861,
+      "afc_accuracy": 0.804,
+      "se_accuracy": 0.861,
+      "delta_pp": 5.7,
+      "repaired": 95,
+      "introduced": 38
+    },
+    {
+      "class_name": "frog",
+      "count": 1000,
+      "afc_correct": 903,
+      "se_correct": 901,
+      "afc_accuracy": 0.903,
+      "se_accuracy": 0.901,
+      "delta_pp": -0.2,
+      "repaired": 46,
+      "introduced": 48
+    },
+    {
+      "class_name": "horse",
+      "count": 1000,
+      "afc_correct": 887,
+      "se_correct": 851,
+      "afc_accuracy": 0.887,
+      "se_accuracy": 0.851,
+      "delta_pp": -3.6,
+      "repaired": 45,
+      "introduced": 81
+    },
+    {
+      "class_name": "ship",
+      "count": 1000,
+      "afc_correct": 933,
+      "se_correct": 919,
+      "afc_accuracy": 0.933,
+      "se_accuracy": 0.919,
+      "delta_pp": -1.4,
+      "repaired": 24,
+      "introduced": 38
+    },
+    {
+      "class_name": "truck",
+      "count": 1000,
+      "afc_correct": 924,
+      "se_correct": 924,
+      "afc_accuracy": 0.924,
+      "se_accuracy": 0.924,
+      "delta_pp": 0.0,
+      "repaired": 30,
+      "introduced": 30
+    }
+  ],
+  "loss_by_stratum": {
+    "both_correct": {
+      "count": 8151,
+      "afc_mean_ce": 0.041530619139325466,
+      "se_mean_ce": 0.04515177342705679,
+      "contribution_to_mean_ce_change": 0.0029516028599298016
+    },
+    "repaired": {
+      "count": 507,
+      "afc_mean_ce": 2.2723747057437222,
+      "se_mean_ce": 0.23273757104001583,
+      "contribution_to_mean_ce_change": -0.10340960272947791
+    },
+    "introduced": {
+      "count": 625,
+      "afc_mean_ce": 0.2170704163737002,
+      "se_mean_ce": 2.193359018326969,
+      "contribution_to_mean_ce_change": 0.12351803762207933
+    },
+    "both_wrong": {
+      "count": 717,
+      "afc_mean_ce": 3.752729021622421,
+      "se_mean_ce": 3.5589727795225516,
+      "contribution_to_mean_ce_change": -0.013892322558560618
+    }
+  },
+  "cat_as_dog": {
+    "afc": 78,
+    "se_afc": 140
+  },
+  "dog_as_cat": {
+    "afc": 127,
+    "se_afc": 62
+  }
+}

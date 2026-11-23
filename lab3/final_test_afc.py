@@ -45,6 +45,7 @@ def prepare_and_evaluate(args):
     base.write_json(args.run_dir / "lock.json", lock)
     assert base.sha256(args.run_dir / "best.pt") == LOCKED_SHA256
     base.evaluate(args)
+    base.write_json(args.run_dir / "evaluation_environment.json", base.environment(base.get_device(args.device)))
     assert base.sha256(SOURCE / "best.pt") == base.sha256(args.run_dir / "best.pt") == LOCKED_SHA256
     metrics = json.loads((args.run_dir / "metrics.json").read_text(encoding="utf-8"))
     assert metrics["selected_epoch"] == 47

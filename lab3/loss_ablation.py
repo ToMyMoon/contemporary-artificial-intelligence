@@ -153,9 +153,50 @@ def run(args):
     print(json.dumps(comparison, indent=2), flush=True)
 
 
+def verify(args):
+    out = args.out
+    cfg, device, dataset, _, _, val_indices = ablation.load_protocol(args)
+    comparison = read_json(out / "comparison.json")
+    assert not comparison["test_evaluated"]
+    with (out / "history.csv").open(encoding="utf-8", newline="") as stream:
+        history = list(csv.DictReader(stream))
+    traces = [json.loads(line) for line in (AFC / "augmentation_trace.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert len(history) == len(traces) == cfg["epochs"]
+    for epoch, (row, trace) in enumerate(zip(history, traces), start=1):
+        assert int(row["epoch"]) == trace["epoch"] == epoch
+        assert all(row[key] == trace[key] for key in TRACE_KEYS)
+    best = max(history, key=lambda row: (
+        float(row["validation_accuracy"]), -float(row["validation_hard_ce"]), -int(row["epoch"])
+    ))
+    digest = base.sha256(out / "best.pt")
+    assert digest == comparison["best_checkpoint_sha256"]
+    checkpoint = torch.load(out / "best.pt", map_location=device, weights_only=True)
+    assert checkpoint["epoch"] == int(best["epoch"]) == comparison["AFC_label_smoothing"]["epoch"]
+    model = base.BaselineCNN().to(device)
+    model.load_state_dict(checkpoint["state_dict"])
+    original_state = ablation.state_hash(model.state_dict())
+    loader = base.loader_for(dataset, val_indices, cfg["batch_size"], device)
+    result = base.evaluate_loader(model, loader, device, collect=True)
+    assert original_state == ablation.state_hash(model.state_dict())
+    targets, probabilities = result["targets"], result["probabilities"]
+    with np.load(out / "validation_predictions.npz") as saved, np.load(AFC / "validation_predictions.npz") as control:
+        assert np.array_equal(saved["indices"], val_indices) and np.array_equal(control["indices"], val_indices)
+        assert np.array_equal(saved["targets"], targets) and np.array_equal(control["targets"], targets)
+        assert np.array_equal(saved["probabilities"], probabilities)
+        assert np.array_equal(saved["predictions"], probabilities.argmax(1))
+        for name, values in (("AFC", control["probabilities"]), ("AFC_label_smoothing", probabilities)):
+            assert summarize(values, targets) == {k: v for k, v in comparison[name].items() if k != "epoch"}
+    record = dict(status="passed", matched_training_epochs=len(history), validation_count=len(targets),
+                  independent_reloaded_validation_predictions_exact=True, checkpoint_sha256=digest)
+    base.write_json(out / "verification.json", record)
+    print(json.dumps(record), flush=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["train", "verify"], nargs="?", default="train")
     parser.add_argument("--device", choices=["cuda"], default="cuda")
     parser.add_argument("--data-dir", type=Path, default=base.ROOT / "data")
     parser.add_argument("--out", type=Path, default=OUTPUT)
-    run(parser.parse_args())
+    args = parser.parse_args()
+    {"train": run, "verify": verify}[args.command](args)

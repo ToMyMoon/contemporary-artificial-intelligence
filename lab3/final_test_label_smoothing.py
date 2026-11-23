@@ -1,4 +1,4 @@
-"""Test the approved label-smoothing epoch 43 against the locked AFC epoch 47."""
+"""Test archived or validation-selected retrained label smoothing against locked AFC."""
 import argparse
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,43 +19,57 @@ AFC = final_test_afc.DEST
 SOURCE = loss.OUTPUT
 
 
-def lock_weights(run):
-    stage = loss.read_json(SOURCE / "comparison.json")
-    config = loss.read_json(SOURCE / "config.json")
+def lock_weights(run, source, mode):
+    stage = loss.read_json(source / "comparison.json")
+    config = loss.read_json(source / "config.json")
+    verification = loss.read_json(source / "verification.json")
     afc_lock = loss.read_json(AFC / "lock.json")
-    assert stage["AFC_label_smoothing"]["epoch"] == 43 and not stage["test_evaluated"]
-    assert loss.read_json(SOURCE / "verification.json")["status"] == "passed"
+    assert not stage["test_evaluated"]
+    assert verification["status"] == "passed" and verification["independent_reloaded_validation_predictions_exact"]
     assert config["training_loss_label_smoothing"] == 0.1
-    assert base.sha256(SOURCE / "best.pt") == stage["best_checkpoint_sha256"] == SMOOTH_SHA
+    epoch = stage["AFC_label_smoothing"]["epoch"]
+    checkpoint_path = source / "best.pt"
+    digest = base.sha256(checkpoint_path)
+    assert digest == stage["best_checkpoint_sha256"]
+    if mode == "archived":
+        assert (epoch, digest) == (43, SMOOTH_SHA), "Archived label-smoothing checkpoint differs from the original lock"
+    else:
+        assert verification["checkpoint_sha256"] == digest
     assert afc_lock["epoch"] == 47
     assert base.sha256(AFC / "best.pt") == afc_lock["checkpoint_sha256"] == final_test_afc.LOCKED_SHA256
-    cp = torch.load(SOURCE / "best.pt", map_location="cpu", weights_only=True)
-    assert cp["epoch"] == 43 and cp["validation"]["accuracy"] == stage["AFC_label_smoothing"]["accuracy"]
-    run.mkdir(parents=True, exist_ok=False)
-    shutil.copy2(SOURCE / "best.pt", run / "best.pt")
-    shutil.copy2(SOURCE / "config.json", run / "training_config.json")
-    shutil.copy2(SOURCE / "comparison.json", run / "validation_stage_metrics.json")
-    shutil.copy2(__file__, run / "final_evaluation_source.py")
-    frozen = {str(f): base.sha256(f) for f in (
-        SOURCE / "best.pt", SOURCE / "comparison.json", AFC / "best.pt", AFC / "lock.json",
-        AFC / "test_predictions.npz", AFC / "metrics.json",
+    cp = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    assert cp["epoch"] == epoch and cp["validation"]["accuracy"] == stage["AFC_label_smoothing"]["accuracy"]
+    frozen = {f.relative_to(base.ROOT).as_posix(): base.sha256(f) for f in (
+        checkpoint_path, source / "comparison.json", AFC / "best.pt", AFC / "lock.json",
+        AFC / "test_predictions.npz", AFC / "metrics.json", AFC / "evaluation_environment.json",
     )}
+    run.mkdir(parents=True, exist_ok=False)
+    shutil.copy2(checkpoint_path, run / "best.pt")
+    assert base.sha256(run / "best.pt") == digest
+    shutil.copy2(source / "config.json", run / "training_config.json")
+    shutil.copy2(source / "comparison.json", run / "validation_stage_metrics.json")
+    shutil.copy2(__file__, run / "final_evaluation_source.py")
     base.write_json(run / "lock.json", {
-        "epoch": 43, "group": "AFC label smoothing 0.1", "checkpoint_sha256": SMOOTH_SHA,
+        "epoch": epoch, "group": "AFC label smoothing 0.1", "mode": mode, "checkpoint_sha256": digest,
         "afc_epoch": 47, "afc_checkpoint_sha256": afc_lock["checkpoint_sha256"],
         "locked_at": datetime.now(timezone(timedelta(hours=8))).isoformat(),
-        "selection": "validation-selected epoch approved before official test evaluation",
+        "selection": "Validation-selected checkpoint locked before test evaluation",
         "confidence_threshold": loss.HIGH_CONFIDENCE, "equal_width_calibration_bins": loss.CALIBRATION_BINS,
         "training_performed": False, "frozen_inputs": frozen,
     })
-    print(f"Locked label smoothing epoch 43: {SMOOTH_SHA}", flush=True)
+    print(f"Locked {mode} label smoothing epoch {epoch}: {digest}", flush=True)
 
 
 def infer(run, data_dir):
     lock = loss.read_json(run / "lock.json")
-    assert lock["epoch"] == 43 and lock["checkpoint_sha256"] == base.sha256(run / "best.pt") == SMOOTH_SHA
+    mode = lock.get("mode", "archived")
+    assert mode in ("archived", "reproduced")
+    if mode == "archived":
+        assert (lock["epoch"], lock["checkpoint_sha256"]) == (43, SMOOTH_SHA)
+    assert lock["checkpoint_sha256"] == base.sha256(run / "best.pt")
+    assert lock["afc_checkpoint_sha256"] == base.sha256(AFC / "best.pt") == final_test_afc.LOCKED_SHA256
     for path, digest in lock["frozen_inputs"].items():
-        assert base.sha256(Path(path)) == digest
+        assert base.sha256(base.ROOT / path) == digest
     base.seed_everything(42)
     device = base.get_device("cuda")
     env = base.environment(device)
@@ -81,7 +95,7 @@ def infer(run, data_dir):
     return targets, result["probabilities"], env
 
 
-def compare(old, new, targets):
+def compare(old, new, targets, epoch):
     afc, smooth = loss.summarize(old, targets), loss.summarize(new, targets)
     masks = []
     for probabilities, metrics in ((old, afc), (new, smooth)):
@@ -96,7 +110,7 @@ def compare(old, new, targets):
     old_ok, old_high = masks[0]
     new_ok, new_high = masks[1]
     old_high_wrong = old_high & ~old_ok
-    return {"AFC_epoch47": afc, "label_smoothing_epoch43": smooth, "paired_changes": {
+    return {"AFC_epoch47": afc, f"label_smoothing_epoch{epoch}": smooth, "paired_changes": {
         "all_corrected": int((~old_ok & new_ok).sum()),
         "all_introduced_errors": int((old_ok & ~new_ok).sum()),
         "old_high_wrong_now_correct": int((old_high_wrong & new_ok).sum()),
@@ -107,16 +121,17 @@ def compare(old, new, targets):
 
 
 def run(args):
-    output = args.run_dir
+    output = args.run_dir.resolve()
     if args.command == "evaluate":
-        lock_weights(output)
+        lock_weights(output, args.training_run.resolve(), args.mode)
     targets, new, env = infer(output, args.data_dir)
     predictions = new.argmax(1)
     path = output / "test_predictions.npz"
     with np.load(AFC / "test_predictions.npz") as saved:
         assert np.array_equal(saved["indices"], np.arange(len(targets))) and np.array_equal(saved["targets"], targets)
         old = saved["probabilities"]
-    comparison = compare(old, new, targets)
+    epoch = loss.read_json(output / "lock.json")["epoch"]
+    comparison = compare(old, new, targets, epoch)
     afc = comparison["AFC_epoch47"]
     afc_saved = loss.read_json(AFC / "metrics.json")["test"]
     assert afc["accuracy"] == afc_saved["accuracy"] and abs(afc["hard_label_cross_entropy"] - afc_saved["loss"]) < 1e-6
@@ -140,6 +155,10 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["evaluate", "verify"])
+    parser.add_argument("--mode", choices=["archived", "reproduced"], default="archived",
+                        help="Evaluate the historical checkpoint or this run's validation winner; verify uses the recorded mode.")
+    parser.add_argument("--training-run", type=Path, default=SOURCE,
+                        help="Label-smoothing training outputs inside this checkout (evaluate only).")
     parser.add_argument("--data-dir", type=Path, default=base.ROOT / "data")
     parser.add_argument("--run-dir", type=Path, default=DEST)
     run(parser.parse_args())

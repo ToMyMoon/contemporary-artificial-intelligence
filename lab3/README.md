@@ -15,7 +15,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-如果系统没有 `py` 命令，请用已安装的 Python 3.11 执行同一条 `-m venv .venv` 命令。本机运行时为复用已有 NumPy、Matplotlib、Pillow，以 `--system-site-packages` 创建了环境；实测详细版本保存在结果的 `environment.json` 和 `packages.txt` 中。尚未在完全隔离的干净环境重跑完整训练。
+如果系统没有 `py` 命令，请用已安装的 Python 3.11 执行同一条 `-m venv .venv` 命令。本机运行时为复用已有 NumPy、Matplotlib、Pillow，以 `--system-site-packages` 创建了环境。实测详细版本见结果的 `environment.json` 和项目的 `requirements-lock.txt`。从新结果目录复跑时使用了同一台机器的依赖环境。
 
 本次实测 Python 3.11.9、NumPy 2.4.0、Matplotlib 3.10.8、Pillow 12.0.0；GPU 为 8 GB RTX 4060 Laptop GPU。需要锁定本次全部 21 个运行依赖的版本时，用 `requirements-lock.txt` 替代上面的 `requirements.txt`，该文件针对本次 Windows CUDA 环境生成。
 
@@ -70,7 +70,7 @@ outputs/checks/preflight.json       划分、归一化、矩阵、64 样本拟�
 outputs/baseline_seed42/
   config.json                      完整配置及源文件、划分哈希
   baseline_source.py               本次训练入口的源码快照
-  environment.json, packages.txt    实测环境
+  environment.json                  实测环境
   model.txt, model_info.json        结构与参数量
   split_indices.npz                训练和验证索引
   history.csv                      逐轮原始记录
@@ -96,7 +96,7 @@ outputs/baseline_seed42/
 
 `verify` 独立逐样本累计混淆矩阵，用保存概率重新计算交叉熵，核对 60 轮历史、选择规则、样本数、CSV、检查点哈希及类别统计，并在新的进程重新加载模型、复核全部 10,000 张测试图像的预测。重复推理仅验证保存模型，不用于选择参数。
 
-完整训练仅做一次，未估计不同种子的波动，未在独立干净环境重训。启用了确定性算法，但不承诺跨版本、跨硬件结果逐位相同；相关限制见 [PyTorch 官方复现说明](https://docs.pytorch.org/docs/2.7/notes/randomness.html)。
+正式结果使用单一种子。已在同机隔离目录复跑 A0、AFC、SE 和标签平滑的训练及测试，尚未估计跨种子波动。启用了确定性算法，跨版本、跨硬件的一致性仍需另行核对，相关限制见 [PyTorch 官方复现说明](https://docs.pytorch.org/docs/2.7/notes/randomness.html)。
 
 ## 三因素数据增强消融
 
@@ -135,7 +135,7 @@ outputs/baseline_seed42/
 
 若本地默认目录 `outputs/final_afc_epoch47/` 已存在，评价入口会拒绝覆盖。需要复核评价时，第一条命令指定新的 `--run-dir outputs/final_afc_epoch47_recheck`，其余三条均传入相同新目录。比较使用已有基础模型测试预测，`checks.py verify` 重新加载锁定模型复核预测，不据此改变选择。
 
-最终目录包含 `lock.json`、锁定权重及训练源码／配置快照、最终 `metrics.json`、10,000 行测试预测、每类结果和混淆矩阵、`baseline_comparison.json`、`per_class_comparison.csv`、逐样本变化表、核查结果和图形。`training_config.json`、`validation_stage_metrics.json` 保留测试前阶段记录；最终 `config.json` 标记本次已完成测试。原基础和增强阶段记录保留。
+最终目录包含 `lock.json`、锁定权重及训练源码／配置快照、最终 `metrics.json`、10,000 行测试预测、每类结果和混淆矩阵、`baseline_comparison.json`、`per_class_comparison.csv`、逐样本变化表、核查结果和图形。AFC 的 `evaluate` 命令写入 `evaluation_environment.json`，供 SE 和标签平滑的测试对照核对运行环境。`training_config.json`、`validation_stage_metrics.json` 保留测试前阶段记录，最终 `config.json` 标记本次已完成测试。
 
 ## SE 通道注意力对照
 
@@ -178,14 +178,15 @@ outputs/baseline_seed42/
 以 AFC 第47轮为对照，按相同协议从头训练60轮，只将训练交叉熵的标签平滑系数从0改为0.1。程序逐轮核对样本顺序及翻转、裁剪参数。轮次仍按验证准确率优先、真实标签交叉熵次优先选取。
 
 ```powershell
-.\.venv\Scripts\python.exe -B -X utf8 loss_ablation.py
+.\.venv\Scripts\python.exe -B -X utf8 loss_ablation.py train
+.\.venv\Scripts\python.exe -B -X utf8 loss_ablation.py verify
 ```
 
 [标签平滑验证对照](evidence/loss_label_smoothing_seed42/comparison.json)给出同一批5,000张验证图像上的准确率、真实标签交叉熵、置信度至少90%的正确／错误预测计数及15等宽分箱的校准误差。第43轮按验证结果锁定后，另行完成[官方测试集对照](evidence/final_label_smoothing_epoch43/comparison.json)。
 
 ## 测试对照与复核
 
-AFC 第47轮先由八组增强的验证结果选出，首次官方测试准确率为 87.76%。SE-AFC 与标签平滑的轮次也分别根据验证结果在测试前锁定。两次后续对照复用同一批10,000张官方测试图像，逐图对应 AFC 的已保存预测。实验最终保留 AFC 第47轮。
+AFC 第47轮先由八组增强的验证结果选出，首次官方测试准确率为 87.76%。SE-AFC 与标签平滑的轮次也分别根据验证结果在测试前锁定。后续探索性对照复用同一批10,000张官方测试图像，逐图对应 AFC 的已保存预测。实验最终保留 AFC 第47轮。
 
 | 已锁定权重 | 测试准确率 | 结果入口 | 独立重载复核 |
 |---|---:|---|---|
@@ -206,3 +207,32 @@ AFC 第47轮先由八组增强的验证结果选出，首次官方测试准确�
 ```
 
 SE、SE 测试和 Grad-CAM 的输入校验覆盖代码与实验产物。旧清单中的 `report/` 条目会被排除，Word 报告可以独立修订。
+
+### 从新目录复现 SE 和标签平滑的测试
+
+在新的检出目录进入本实验，先用前文的基础运行命令完成 A0 的数据准备、训练与评价。只复现这两个扩展时，增强消融的训练命令可以只运行 AFC。以下命令使用与原实验相同的 CUDA 环境和默认训练输出目录。
+
+```powershell
+.\.venv\Scripts\python.exe -B -X utf8 augmentation_ablation.py preflight
+.\.venv\Scripts\python.exe -B -X utf8 augmentation_ablation.py train --groups AFC
+.\.venv\Scripts\python.exe -B -X utf8 final_test_afc.py evaluate
+
+.\.venv\Scripts\python.exe -B -X utf8 se_ablation.py preflight
+.\.venv\Scripts\python.exe -B -X utf8 se_ablation.py train
+.\.venv\Scripts\python.exe -B -X utf8 se_ablation.py verify
+.\.venv\Scripts\python.exe -B -X utf8 final_test_se.py evaluate --mode reproduced --run-dir outputs/reproduced_se_test
+.\.venv\Scripts\python.exe -B -X utf8 final_test_se.py verify --run-dir outputs/reproduced_se_test
+
+.\.venv\Scripts\python.exe -B -X utf8 loss_ablation.py train
+.\.venv\Scripts\python.exe -B -X utf8 loss_ablation.py verify
+.\.venv\Scripts\python.exe -B -X utf8 final_test_label_smoothing.py evaluate --mode reproduced --run-dir outputs/reproduced_label_smoothing_test
+.\.venv\Scripts\python.exe -B -X utf8 final_test_label_smoothing.py verify --run-dir outputs/reproduced_label_smoothing_test
+```
+
+先用验证集选权重并独立重载核对。`reproduced` 模式将这次训练选出的轮次和检查点哈希写入 `lock.json`，再与 AFC 第47轮在官方测试集上逐图比较。测试输出写入单独目录，`verify` 读取其中的锁定记录。若训练时指定了本检出目录内的另一个 `--out`，评价时用 `--training-run` 指向它。若数据放在其他目录，各训练、评价和复核命令均可使用 `--data-dir`。
+
+复核原有已锁定的 SE 和标签平滑时，沿用上节原结果目录，历史评价入口的默认模式为 `archived`，仍要求原第48／43轮检查点的固定哈希。两种模式都使用原 AFC 第47轮作为参照。新目录下的 AFC 评价会校验其历史哈希，因此重训 AFC 需使用可复现该锁定权重的环境。
+
+同机从空的扩展结果目录各重训60轮后，SE-AFC 复现第48轮和86.58%的测试准确率，标签平滑复现第43轮和87.17%的测试准确率。两组的5,000张验证预测及10,000张测试预测均通过独立重载复核，测试结果与各自的历史记录逐图一致。
+
+[SE 重训测试](evidence/reproduced_se_test/comparison_analysis.json) · [SE 重训复核](evidence/reproduced_se_test/verification.json) · [标签平滑重训测试](evidence/reproduced_label_smoothing_test/comparison.json) · [标签平滑重训复核](evidence/reproduced_label_smoothing_test/verification.json)
