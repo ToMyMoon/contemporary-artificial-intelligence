@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "separate_process": true,
+  "samples": 24,
+  "heatmaps": 72,
+  "all_raw_and_normalized_maps_exact": true,
+  "max_raw_difference": 0.0,
+  "max_logit_difference": 0.0,
+  "sample_selection_and_pixels_reproduced": true,
+  "model_state_unchanged": true,
+  "original_inputs_unchanged": 80
+}

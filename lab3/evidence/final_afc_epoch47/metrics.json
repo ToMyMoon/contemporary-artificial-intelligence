@@ -1,0 +1,36 @@
+{
+  "selected_epoch": 47,
+  "train_eval": {
+    "loss": 0.13777727864583333,
+    "accuracy": 0.9505333333333333,
+    "count": 45000
+  },
+  "validation": {
+    "loss": 0.41568330078125,
+    "accuracy": 0.8806,
+    "count": 5000
+  },
+  "test": {
+    "loss": 0.43169853515625,
+    "accuracy": 0.8776,
+    "count": 10000
+  },
+  "test_inference_seconds": 0.27083190018311143,
+  "inference_timing_scope": "one pass, including CPU DataLoader, device transfers, CE/accuracy/softmax and probability collection; excludes dataset construction and export",
+  "correct_test": 8776,
+  "errors_test": 1224,
+  "per_class_accuracy": [
+    0.889,
+    0.936,
+    0.793,
+    0.802,
+    0.905,
+    0.804,
+    0.903,
+    0.887,
+    0.933,
+    0.924
+  ],
+  "weights_unchanged_during_evaluation": true,
+  "checkpoint_sha256": "688fa02161b1f78345ba783b7c4766df26b7e30739af0eaf17757f9af8fd59a8"
+}

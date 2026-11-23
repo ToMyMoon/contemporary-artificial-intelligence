@@ -1,0 +1,32 @@
+{
+  "AFC_epoch47": {
+    "samples": 10000,
+    "accuracy": 0.8776,
+    "hard_label_cross_entropy": 0.4316985771153548,
+    "expected_calibration_error": 0.05145589661598206,
+    "mean_confidence": 0.9290558966159821,
+    "wrong": 1224,
+    "high_confidence_predictions": 7960,
+    "high_confidence_wrong": 348,
+    "high_confidence_correct": 7612
+  },
+  "label_smoothing_epoch43": {
+    "samples": 10000,
+    "accuracy": 0.8717,
+    "hard_label_cross_entropy": 0.4244835422174573,
+    "expected_calibration_error": 0.06813269228190184,
+    "mean_confidence": 0.8038063516005873,
+    "wrong": 1283,
+    "high_confidence_predictions": 4708,
+    "high_confidence_wrong": 37,
+    "high_confidence_correct": 4671
+  },
+  "paired_changes": {
+    "all_corrected": 518,
+    "all_introduced_errors": 577,
+    "old_high_wrong_now_correct": 92,
+    "old_high_wrong_still_wrong_below_90": 231,
+    "old_high_wrong_still_wrong_at_least_90": 25,
+    "new_high_wrong": 12
+  }
+}

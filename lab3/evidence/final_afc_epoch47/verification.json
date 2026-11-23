@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "history_complete": true,
+  "selection_rule_verified": true,
+  "prediction_rows": 10000,
+  "per_class_count": 1000,
+  "confusion_recomputed": true,
+  "cross_entropy_recomputed": 0.4316985771153548,
+  "checkpoint_reloaded_in_separate_process": true,
+  "all_predictions_reproduced": true,
+  "maximum_probability_difference": 0.0,
+  "limitation": "Full 60-epoch training was run once; not repeated in a clean independent environment"
+}

@@ -1,0 +1,33 @@
+{
+  "group": "SE-AFC",
+  "selected_epoch": 48,
+  "train_eval": {
+    "loss": 0.13632706163194444,
+    "accuracy": 0.9515111111111111,
+    "count": 45000
+  },
+  "validation": {
+    "loss": 0.387411962890625,
+    "accuracy": 0.8806,
+    "count": 5000,
+    "correct": 4403
+  },
+  "generalization_gap": 0.07091111111111104,
+  "per_class_accuracy": [
+    0.892,
+    0.922,
+    0.846,
+    0.718,
+    0.89,
+    0.842,
+    0.936,
+    0.886,
+    0.938,
+    0.936
+  ],
+  "parameters": 291672,
+  "added_parameters": 2926,
+  "checkpoint_sha256": "d91594f0d1ea7b8f1459cb315e127b580b78e08611e8ea040c075b1d0582a21c",
+  "model_state_unchanged_by_evaluation": true,
+  "test_evaluated": false
+}

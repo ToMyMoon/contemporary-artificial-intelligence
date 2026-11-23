@@ -1,0 +1,30 @@
+{
+  "AFC": {
+    "epoch": 47,
+    "samples": 5000,
+    "accuracy": 0.8806,
+    "hard_label_cross_entropy": 0.4156832717835331,
+    "expected_calibration_error": 0.04930952426195144,
+    "mean_confidence": 0.9291440165281296,
+    "wrong": 597,
+    "high_confidence_predictions": 3995,
+    "high_confidence_wrong": 158,
+    "high_confidence_correct": 3837
+  },
+  "AFC_label_smoothing": {
+    "epoch": 43,
+    "samples": 5000,
+    "accuracy": 0.8844,
+    "hard_label_cross_entropy": 0.4128157915381071,
+    "expected_calibration_error": 0.07381816974282264,
+    "mean_confidence": 0.8107309676706791,
+    "wrong": 578,
+    "high_confidence_predictions": 2409,
+    "high_confidence_wrong": 17,
+    "high_confidence_correct": 2392
+  },
+  "training_seconds": 209.6299106000224,
+  "matching_sample_order_and_augmentation_epochs": 60,
+  "best_checkpoint_sha256": "b30e6e7bce03a9329e8677b48069f4cc2a616cd23dc55c8a8dd13283476b4987",
+  "test_evaluated": false
+}
