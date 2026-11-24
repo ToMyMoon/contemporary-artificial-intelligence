@@ -236,3 +236,11 @@ SE、SE 测试和 Grad-CAM 的输入校验覆盖代码与实验产物。旧清�
 同机从空的扩展结果目录各重训60轮后，SE-AFC 复现第48轮和86.58%的测试准确率，标签平滑复现第43轮和87.17%的测试准确率。两组的5,000张验证预测及10,000张测试预测均通过独立重载复核，测试结果与各自的历史记录逐图一致。
 
 [SE 重训测试](evidence/reproduced_se_test/comparison_analysis.json) · [SE 重训复核](evidence/reproduced_se_test/verification.json) · [标签平滑重训测试](evidence/reproduced_label_smoothing_test/comparison.json) · [标签平滑重训复核](evidence/reproduced_label_smoothing_test/verification.json)
+
+#### 重训验证与历史预测逐图核对
+
+- [SE-AFC 第48轮重训后的验证集重载复核](evidence/reproduced_se_test/validation_verification.json)
+- [标签平滑第43轮重训后的验证集重载复核](evidence/reproduced_label_smoothing_test/validation_verification.json)
+- [新旧预测数组的 SHA-256 和逐图差异计数](evidence/prediction_array_comparison.json)
+
+逐图核对先确认样本索引和真实标签逐项相同，再比较类别预测与十类概率。两组各5,000张验证图像和各10,000张测试图像的差异行数均为0，概率最大绝对差均为0。校验值使用小端、C顺序的数组原始字节计算，文件中另记数组形状和数据类型。

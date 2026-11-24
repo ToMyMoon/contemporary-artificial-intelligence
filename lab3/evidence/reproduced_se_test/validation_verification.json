@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "all_5000_predictions_and_probabilities_exact": true,
+  "max_reload_probability_difference": 0.0,
+  "independent_ce": 0.38741199780331453,
+  "correct": 4403,
+  "selected_epoch_verified": true,
+  "evaluation_preserves_state": true,
+  "frozen_files_unchanged": 64,
+  "test_evaluated": false,
+  "note": "Separate-process checkpoint inference reproduction; not an independent full training repeat"
+}

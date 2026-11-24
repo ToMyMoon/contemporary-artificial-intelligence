@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "matched_training_epochs": 60,
+  "validation_count": 5000,
+  "independent_reloaded_validation_predictions_exact": true,
+  "checkpoint_sha256": "b30e6e7bce03a9329e8677b48069f4cc2a616cd23dc55c8a8dd13283476b4987"
+}
