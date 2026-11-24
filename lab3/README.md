@@ -19,13 +19,17 @@ py -3.11 -m venv .venv
 
 本次实测 Python 3.11.9、NumPy 2.4.0、Matplotlib 3.10.8、Pillow 12.0.0；GPU 为 8 GB RTX 4060 Laptop GPU。需要锁定本次全部 21 个运行依赖的版本时，用 `requirements-lock.txt` 替代上面的 `requirements.txt`，该文件针对本次 Windows CUDA 环境生成。
 
-CPU 环境可改装相同版本的 CPU PyTorch/torchvision 并以 `--device cpu` 运行；CPU 性能及跨设备的逐位一致性未验证。
+**适用平台。** 本 README 的完整复现命令在 Windows PowerShell 和 NVIDIA CUDA GPU 上验证。三因素增强、AFC 最终测试、SE、Grad-CAM 和标签平滑的计算或复核入口需要 CUDA。CPU 环境可改装同版本的 CPU 版 PyTorch/torchvision，将 A0 基础流程中的 `baseline.py` 和 `checks.py` 命令改为 `--device cpu`。CPU 的运行时间及其与 CUDA 结果的逐位一致性未核验。
 
 `download_assets.py` 是本机网络较慢时使用的官方文件分段续传辅助，不参与模型或训练方法。下载的运行库安装包放在 `.downloads/`，以官方索引中的 SHA-256 核验；该目录不属于提交源码。
 
 ## 数据和运行顺序
 
-CIFAR-10 原始数据来自官方多伦多大学地址，不随源码提交。下载脚本验证官方压缩包 MD5；`prepare` 通过 torchvision 再次校验并解压，另存各文件 SHA-256。不要使用来历不明的 pickle 数据文件。
+CIFAR-10 Python 版原始数据由下列命令从多伦多大学官方站点下载和准备。
+
+- `download_data.py` 将原始压缩包保存为 `data/cifar-10-python.tar.gz`，并检查官方 MD5。
+- `baseline.py prepare` 通过 torchvision 校验并解压到 `data/cifar-10-batches-py/`。输入是训练批次 `data_batch_1` 至 `data_batch_5`、测试批次 `test_batch`，以及保存类别名的 `batches.meta`。各文件的 SHA-256 记录在 `data/manifest.json`。
+- 批次文件的 `data` 字段保存 RGB 像素（`uint8`，每行 3,072 个值，按 R、G、B 通道依次存放），`labels` 字段保存对应的 0–9 类别编号，类别名称按 `batches.meta` 的 `label_names` 顺序对应。请使用官方压缩包。
 
 ```powershell
 .\.venv\Scripts\python.exe -B -X utf8 download_data.py
@@ -96,6 +100,8 @@ outputs/baseline_seed42/
 
 `verify` 独立逐样本累计混淆矩阵，用保存概率重新计算交叉熵，核对 60 轮历史、选择规则、样本数、CSV、检查点哈希及类别统计，并在新的进程重新加载模型、复核全部 10,000 张测试图像的预测。重复推理仅验证保存模型，不用于选择参数。
 
+**通过标志。** 检查本次运行生成的 `outputs/checks/preflight.json` 和对应结果目录的 `verification.json`，两者的 `status` 应为 `"passed"`。A0 和 AFC 的测试复核还应有 `prediction_rows: 10000` 和 `all_predictions_reproduced: true`。在实测环境下，A0 的 `metrics.json` 记录第59轮、测试准确率 84.20%，AFC 对应第47轮、87.76%。
+
 正式结果使用单一种子。已在同机隔离目录复跑 A0、AFC、SE 和标签平滑的训练及测试，尚未估计跨种子波动。启用了确定性算法，跨版本、跨硬件的一致性仍需另行核对，相关限制见 [PyTorch 官方复现说明](https://docs.pytorch.org/docs/2.7/notes/randomness.html)。
 
 ## 三因素数据增强消融
@@ -127,7 +133,7 @@ outputs/baseline_seed42/
 八组验证比较完成后，用户确认使用 AFC（翻转＋裁剪）第 47 轮。`final_test_afc.py` 在评价前校验固定权重 SHA-256、组别和轮次，写入锁定记录，再复用基础评价流程。最终阶段没有新增训练或调参。结果与分析见 [AFC 测试指标](evidence/final_afc_epoch47/metrics.json)。
 
 ```powershell
-.\.venv\Scripts\python.exe -B -X utf8 final_test_afc.py evaluate
+.\.venv\Scripts\python.exe -B -X utf8 final_test_afc.py evaluate --device cuda
 .\.venv\Scripts\python.exe -B -X utf8 checks.py verify --run-dir outputs/final_afc_epoch47 --device cuda
 .\.venv\Scripts\python.exe -B -X utf8 final_test_afc.py compare
 .\.venv\Scripts\python.exe -B -X utf8 plot_results.py --run-dir outputs/final_afc_epoch47
@@ -135,7 +141,9 @@ outputs/baseline_seed42/
 
 若本地默认目录 `outputs/final_afc_epoch47/` 已存在，评价入口会拒绝覆盖。需要复核评价时，第一条命令指定新的 `--run-dir outputs/final_afc_epoch47_recheck`，其余三条均传入相同新目录。比较使用已有基础模型测试预测，`checks.py verify` 重新加载锁定模型复核预测，不据此改变选择。
 
-最终目录包含 `lock.json`、锁定权重及训练源码／配置快照、最终 `metrics.json`、10,000 行测试预测、每类结果和混淆矩阵、`baseline_comparison.json`、`per_class_comparison.csv`、逐样本变化表、核查结果和图形。AFC 的 `evaluate` 命令写入 `evaluation_environment.json`，供 SE 和标签平滑的测试对照核对运行环境。`training_config.json`、`validation_stage_metrics.json` 保留测试前阶段记录，最终 `config.json` 标记本次已完成测试。
+**生成最终预测。** 上面的第一条命令 `final_test_afc.py evaluate --device cuda` 从 `outputs/augmentation_seed42/AFC/best.pt` 读取锁定权重，校验其轮次和历史 SHA-256，然后生成 `outputs/final_afc_epoch47/test_predictions.csv` 和同目录的 `test_predictions.npz`。CSV 含表头和 10,000 条记录，按官方测试集顺序排列，五列为 `test_index,true_class,predicted_class,confidence,correct`，其中索引从 0 开始，`correct` 为 0 或 1。指定 `--run-dir` 时，两份预测都写到该目录。复现这条命令时，增强训练须使用默认输出目录，最终测试入口会从固定位置读取 AFC 权重。若历史哈希校验失败，先核对来源目录和实测 CUDA 环境。
+
+最终目录同时保存 `lock.json`、锁定权重及训练源码／配置快照、`metrics.json`、每类结果和混淆矩阵、`baseline_comparison.json`、`per_class_comparison.csv`、逐样本变化表、核查结果及 `figures/`。AFC 的 `evaluate` 命令写入 `evaluation_environment.json`，供 SE 和标签平滑的测试对照核对运行环境。`training_config.json`、`validation_stage_metrics.json` 保留测试前阶段记录，最终 `config.json` 标记本次已完成测试。
 
 ## SE 通道注意力对照
 
